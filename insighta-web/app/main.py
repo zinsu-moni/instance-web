@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from fastapi import Depends, FastAPI, Form, Request, Response, status
+from fastapi import Depends, FastAPI, Form, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -103,7 +103,25 @@ def _profile_filters(
         "page": page,
         "limit": limit,
     }
-    return {key: value for key, value in raw_filters.items() if value is not None}
+    cleaned_filters: dict[str, Any] = {}
+    for key, value in raw_filters.items():
+        if value is None:
+            continue
+        if isinstance(value, str):
+            trimmed = value.strip()
+            if not trimmed:
+                continue
+            cleaned_filters[key] = trimmed
+            continue
+        cleaned_filters[key] = value
+    return cleaned_filters
+
+
+def _profile_filter_error(filters: dict[str, Any]) -> str:
+    country_id = filters.get("country_id")
+    if country_id:
+        return "The backend rejected this country filter. Use the backend's actual country identifier, not a display name."
+    return "The backend rejected one or more profile filters. Adjust the filter values and try again."
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -223,10 +241,21 @@ async def profiles(
         limit=limit,
     )
 
-    payload = await backend_client.get_profiles(access_token, filters)
-    profiles = _paginated_items(payload)
-    total = _paginated_total(payload)
-    total_pages = ceil(total / limit) if total else 1
+    error_message: str | None = None
+    profiles: list[dict[str, Any]] = []
+    total = 0
+    total_pages = 1
+
+    try:
+        payload = await backend_client.get_profiles(access_token, filters)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code != status.HTTP_400_BAD_REQUEST:
+            raise
+        error_message = _profile_filter_error(filters)
+    else:
+        profiles = _paginated_items(payload)
+        total = _paginated_total(payload)
+        total_pages = ceil(total / limit) if total else 1
 
     for profile in profiles:
         profile["created_at_readable"] = _readable_date(profile.get("created_at"))
@@ -242,6 +271,7 @@ async def profiles(
             "limit": limit,
             "total": total,
             "total_pages": total_pages,
+            "error_message": error_message,
             "csrf_token": request.state.csrf_token,
         },
     )
@@ -274,7 +304,15 @@ async def export_profiles(
         limit=limit,
     )
 
-    csv_bytes = await backend_client.export_profiles(access_token, filters)
+    try:
+        csv_bytes = await backend_client.export_profiles(access_token, filters)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == status.HTTP_400_BAD_REQUEST:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=_profile_filter_error(filters),
+            ) from exc
+        raise
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     headers = {
         "Content-Disposition": f'attachment; filename="profiles_{timestamp}.csv"',

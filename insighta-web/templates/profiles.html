@@ -80,6 +80,12 @@
       </div>
     </form>
 
+    {% if error_message %}
+      <div class="card">
+        <p>{{ error_message }}</p>
+      </div>
+    {% endif %}
+
     {% if profiles %}
       <table>
         <thead>
