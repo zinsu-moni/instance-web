@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Insighta Labs+{% endblock %}
+
+{% block content %}
+  <section class="dashboard-header">
+    <h1>Welcome back, @{{ user.username }}</h1>
+  </section>
+
+  <section class="metrics-grid" aria-label="Dashboard metrics">
+    <article class="card metric-card">
+      <p class="metric-card__label">Total Profiles</p>
+      <strong class="metric-card__value">{{ total }}</strong>
+    </article>
+
+    <article class="card metric-card">
+      <p class="metric-card__label">Total Countries</p>
+      <strong class="metric-card__value">{{ total_countries }}</strong>
+    </article>
+
+    <article class="card metric-card">
+      <p class="metric-card__label">Gender Split</p>
+      <strong class="metric-card__value">Male: {{ male_count }} | Female: {{ female_count }}</strong>
+    </article>
+  </section>
+
+  <section class="section-stack">
+    <h2>Recent Profiles</h2>
+
+    {% if recent_profiles %}
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Gender</th>
+            <th>Age</th>
+            <th>Country</th>
+            <th>Created At</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for profile in recent_profiles %}
+            <tr>
+              <td><a href="/profiles/{{ profile.id }}">{{ profile.name }}</a></td>
+              <td>{{ profile.gender }}</td>
+              <td>{{ profile.age }}</td>
+              <td>{{ profile.country }}</td>
+              <td>{{ profile.created_at_readable }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="card">
+        <p>No profiles found</p>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

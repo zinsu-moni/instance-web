@@ -51,6 +51,7 @@ async def get_current_user(request: Request, response: Response) -> dict[str, An
         user = await backend_client.get_me(access_token)
         if user is None:
             raise AuthRedirect
+        request.state.access_token = access_token
         request.state.csrf_token = set_csrf_cookie(response)
         request.state.current_user = user
         return user
@@ -78,6 +79,7 @@ async def get_current_user(request: Request, response: Response) -> dict[str, An
         raise AuthRedirect
 
     set_auth_cookies(response, new_access_token, refreshed["refresh_token"])
+    request.state.access_token = new_access_token
     request.state.csrf_token = set_csrf_cookie(response)
     request.state.current_user = user
     return user

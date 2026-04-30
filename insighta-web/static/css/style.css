@@ -148,6 +148,37 @@ a {
   padding: 1.25rem;
 }
 
+.dashboard-header h1 {
+  margin: 0 0 1.25rem;
+  font-size: 1.75rem;
+  letter-spacing: 0;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.metric-card__label {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.metric-card__value {
+  display: block;
+  color: var(--text);
+  font-size: 1.6rem;
+  line-height: 1.2;
+}
+
+.section-stack h2 {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+}
+
 .button {
   display: inline-flex;
   align-items: center;
@@ -250,6 +281,10 @@ tbody tr:hover {
 
   .page {
     padding-top: 1.25rem;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr;
   }
 
   table {
