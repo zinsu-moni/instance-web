@@ -1,0 +1,260 @@
+:root {
+  color-scheme: dark;
+  --background: #0f0f0f;
+  --card: #1a1a1a;
+  --primary: #6366f1;
+  --primary-hover: #5457df;
+  --text: #e5e5e5;
+  --muted: #888;
+  --border: #2a2a2a;
+  --surface: #141414;
+  --row: #171717;
+  --row-alt: #1d1d1d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: var(--background);
+  color: var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid var(--border);
+  background: rgba(15, 15, 15, 0.96);
+  backdrop-filter: blur(12px);
+}
+
+.navbar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  width: min(1180px, calc(100% - 2rem));
+  min-height: 64px;
+  margin: 0 auto;
+}
+
+.navbar__brand {
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.navbar__brand::after {
+  display: block;
+  width: 32px;
+  height: 2px;
+  margin-top: 2px;
+  background: var(--primary);
+  content: "";
+}
+
+.navbar__links,
+.navbar__account {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.navbar__links a {
+  padding: 0.45rem 0.55rem;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.navbar__links a:hover {
+  background: var(--card);
+  color: var(--text);
+}
+
+.navbar__user {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.page {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0;
+}
+
+.login-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.login-card,
+.card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+}
+
+.login-card {
+  width: min(420px, 100%);
+  padding: 2rem;
+  text-align: center;
+}
+
+.login-card__mark {
+  display: inline-grid;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 1rem;
+  place-items: center;
+  border: 1px solid rgba(99, 102, 241, 0.45);
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--text);
+  font-weight: 800;
+}
+
+.login-card h1 {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: 0;
+}
+
+.login-card p {
+  margin: 0.5rem 0 1.5rem;
+  color: var(--muted);
+}
+
+.card {
+  padding: 1.25rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0.65rem 1rem;
+  border: 0;
+  border-radius: 7px;
+  background: var(--primary);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.button--small {
+  min-height: 34px;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.button--wide {
+  width: 100%;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+th,
+td {
+  padding: 0.8rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+th {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+tbody tr {
+  background: var(--row);
+}
+
+tbody tr:nth-child(even) {
+  background: var(--row-alt);
+}
+
+tbody tr:hover {
+  background: rgba(99, 102, 241, 0.12);
+}
+
+.spinner {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 760px) {
+  .navbar__inner {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.85rem 0;
+  }
+
+  .navbar__links,
+  .navbar__account {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .navbar__account {
+    justify-content: space-between;
+  }
+
+  .page {
+    padding-top: 1.25rem;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}

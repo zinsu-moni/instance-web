@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login | Insighta Labs+</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+  </head>
+  <body>
+    <main class="login-page">
+      <section class="login-card" aria-labelledby="login-title">
+        <div class="login-card__mark">IL+</div>
+        <h1 id="login-title">Insighta Labs+</h1>
+        <p>Demographic Intelligence Platform</p>
+        <a class="button button--wide" href="{{ backend_url }}/auth/github">Continue with GitHub</a>
+      </section>
+    </main>
+  </body>
+</html>

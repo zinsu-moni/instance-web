@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Insighta Labs+{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="navbar__inner">
+        <a class="navbar__brand" href="/dashboard">Insighta Labs+</a>
+        <div class="navbar__links" aria-label="Primary navigation">
+          <a href="/dashboard">Dashboard</a>
+          <a href="/profiles">Profiles</a>
+          <a href="/search">Search</a>
+          <a href="/account">Account</a>
+        </div>
+        <div class="navbar__account">
+          <span class="navbar__user">@{{ user.username }}</span>
+          <form method="post" action="/auth/logout">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="button button--small" type="submit">Logout</button>
+          </form>
+        </div>
+      </div>
+    </nav>
+
+    <main class="page">
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>
