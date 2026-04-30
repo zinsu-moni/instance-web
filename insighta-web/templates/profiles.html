@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Profiles | Insighta Labs+{% endblock %}
+
+{% block content %}
+  <section class="section-stack">
+    <h1>Profiles</h1>
+
+    <form method="get" action="/profiles" class="card">
+      <div class="filters-grid">
+        <label>
+          <span>Gender</span>
+          <select name="gender">
+            <option value="" {% if not filters.gender %}selected{% endif %}>All</option>
+            <option value="male" {% if filters.gender == "male" %}selected{% endif %}>male</option>
+            <option value="female" {% if filters.gender == "female" %}selected{% endif %}>female</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Country ID</span>
+          <input type="text" name="country_id" value="{{ filters.country_id or '' }}">
+        </label>
+
+        <label>
+          <span>Age Group</span>
+          <select name="age_group">
+            <option value="" {% if not filters.age_group %}selected{% endif %}>All</option>
+            <option value="child" {% if filters.age_group == "child" %}selected{% endif %}>child</option>
+            <option value="teenager" {% if filters.age_group == "teenager" %}selected{% endif %}>teenager</option>
+            <option value="adult" {% if filters.age_group == "adult" %}selected{% endif %}>adult</option>
+            <option value="senior" {% if filters.age_group == "senior" %}selected{% endif %}>senior</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Min Age</span>
+          <input type="number" name="min_age" value="{{ filters.min_age or '' }}">
+        </label>
+
+        <label>
+          <span>Max Age</span>
+          <input type="number" name="max_age" value="{{ filters.max_age or '' }}">
+        </label>
+
+        <label>
+          <span>Sort By</span>
+          <select name="sort_by">
+            <option value="" {% if not filters.sort_by %}selected{% endif %}>Select</option>
+            <option value="age" {% if filters.sort_by == "age" %}selected{% endif %}>age</option>
+            <option value="created_at" {% if filters.sort_by == "created_at" %}selected{% endif %}>created_at</option>
+            <option value="gender_probability" {% if filters.sort_by == "gender_probability" %}selected{% endif %}>gender_probability</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Order</span>
+          <select name="order">
+            <option value="" {% if not filters.order %}selected{% endif %}>Select</option>
+            <option value="asc" {% if filters.order == "asc" %}selected{% endif %}>asc</option>
+            <option value="desc" {% if filters.order == "desc" %}selected{% endif %}>desc</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Per Page</span>
+          <input type="number" name="limit" min="1" value="{{ limit }}">
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button type="submit" class="button">Apply Filters</button>
+        <a href="/profiles" class="button">Reset</a>
+        <a
+          href="/profiles/export?limit={{ limit }}{% if filters.gender %}&gender={{ filters.gender }}{% endif %}{% if filters.country_id %}&country_id={{ filters.country_id }}{% endif %}{% if filters.age_group %}&age_group={{ filters.age_group }}{% endif %}{% if filters.min_age is not none %}&min_age={{ filters.min_age }}{% endif %}{% if filters.max_age is not none %}&max_age={{ filters.max_age }}{% endif %}{% if filters.sort_by %}&sort_by={{ filters.sort_by }}{% endif %}{% if filters.order %}&order={{ filters.order }}{% endif %}{% if page %}&page={{ page }}{% endif %}"
+          class="button"
+        >
+          Export CSV
+        </a>
+      </div>
+    </form>
+
+    {% if profiles %}
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Gender</th>
+            <th>Age</th>
+            <th>Age Group</th>
+            <th>Country</th>
+            <th>Created At</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for profile in profiles %}
+            <tr>
+              <td><a href="/profiles/{{ profile.id }}">{{ profile.name }}</a></td>
+              <td>{{ profile.gender }}</td>
+              <td>{{ profile.age }}</td>
+              <td>{{ profile.age_group }}</td>
+              <td>{{ profile.country }}</td>
+              <td>{{ profile.created_at_readable }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="card">
+        <p>No profiles found</p>
+      </div>
+    {% endif %}
+
+    <div class="card pagination-row">
+      {% if page > 1 %}
+        <a
+          href="/profiles?page={{ page - 1 }}&limit={{ limit }}{% if filters.gender %}&gender={{ filters.gender }}{% endif %}{% if filters.country_id %}&country_id={{ filters.country_id }}{% endif %}{% if filters.age_group %}&age_group={{ filters.age_group }}{% endif %}{% if filters.min_age is not none %}&min_age={{ filters.min_age }}{% endif %}{% if filters.max_age is not none %}&max_age={{ filters.max_age }}{% endif %}{% if filters.sort_by %}&sort_by={{ filters.sort_by }}{% endif %}{% if filters.order %}&order={{ filters.order }}{% endif %}"
+          class="button"
+        >
+          Prev
+        </a>
+      {% else %}
+        <span class="button button--disabled">Prev</span>
+      {% endif %}
+
+      <span>Page {{ page }} of {{ total_pages }}</span>
+      <span>Total: {{ total }} profiles</span>
+
+      {% if page < total_pages %}
+        <a
+          href="/profiles?page={{ page + 1 }}&limit={{ limit }}{% if filters.gender %}&gender={{ filters.gender }}{% endif %}{% if filters.country_id %}&country_id={{ filters.country_id }}{% endif %}{% if filters.age_group %}&age_group={{ filters.age_group }}{% endif %}{% if filters.min_age is not none %}&min_age={{ filters.min_age }}{% endif %}{% if filters.max_age is not none %}&max_age={{ filters.max_age }}{% endif %}{% if filters.sort_by %}&sort_by={{ filters.sort_by }}{% endif %}{% if filters.order %}&order={{ filters.order }}{% endif %}"
+          class="button"
+        >
+          Next
+        </a>
+      {% else %}
+        <span class="button button--disabled">Next</span>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

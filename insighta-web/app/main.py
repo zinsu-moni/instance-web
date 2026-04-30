@@ -1,10 +1,12 @@
-from pathlib import Path
 from datetime import datetime, timezone
+from io import BytesIO
+from math import ceil
+from pathlib import Path
 from typing import Any
 
 import httpx
 from fastapi import Depends, FastAPI, Form, Request, Response, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,6 +24,7 @@ from app.dependencies import (
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+FRONTEND_CALLBACK_URL = "http://127.0.0.1:5000/auth/callback"
 
 
 app = FastAPI(title="Insighta Labs+ Web Portal")
@@ -77,6 +80,32 @@ def _readable_date(value: Any) -> str:
     return parsed.strftime("%b %d, %Y")
 
 
+def _profile_filters(
+    *,
+    gender: str | None = None,
+    country_id: str | None = None,
+    age_group: str | None = None,
+    min_age: int | None = None,
+    max_age: int | None = None,
+    sort_by: str | None = None,
+    order: str | None = None,
+    page: int | None = None,
+    limit: int | None = None,
+) -> dict[str, Any]:
+    raw_filters = {
+        "gender": gender,
+        "country_id": country_id,
+        "age_group": age_group,
+        "min_age": min_age,
+        "max_age": max_age,
+        "sort_by": sort_by,
+        "order": order,
+        "page": page,
+        "limit": limit,
+    }
+    return {key: value for key, value in raw_filters.items() if value is not None}
+
+
 @app.get("/login", response_class=HTMLResponse)
 async def login(request: Request):
     access_token = request.cookies.get("access_token")
@@ -96,40 +125,18 @@ async def login(request: Request):
 
 @app.get("/auth/login")
 async def auth_login(request: Request):
-    callback_url = str(request.url_for("auth_callback"))
-
-    try:
-        auth_url = await backend_client.get_github_auth_url()
-    except httpx.HTTPError:
-        auth_url = None
-
-    if not auth_url:
-        github_url = httpx.URL(f"{settings.backend_url}/auth/github").copy_add_param("redirect_uri", callback_url)
-        return RedirectResponse(url=str(github_url), status_code=status.HTTP_303_SEE_OTHER)
-
-    rewritten_url = httpx.URL(auth_url).copy_set_param("redirect_uri", callback_url)
-    return RedirectResponse(url=str(rewritten_url), status_code=status.HTTP_303_SEE_OTHER)
+    github_url = httpx.URL(f"{settings.backend_url}/auth/github").copy_add_param(
+        "redirect_uri",
+        FRONTEND_CALLBACK_URL,
+    )
+    return RedirectResponse(url=str(github_url), status_code=status.HTTP_303_SEE_OTHER)
 
 
 @app.get("/auth/callback")
 async def auth_callback(
-    request: Request,
     access_token: str | None = None,
     refresh_token: str | None = None,
-    code: str | None = None,
-    state: str | None = None,
 ):
-    if (not access_token or not refresh_token) and code and state:
-        callback_url = str(request.url_for("auth_callback"))
-        try:
-            tokens = await backend_client.exchange_github_callback(code, state, redirect_uri=callback_url)
-        except httpx.HTTPError:
-            tokens = None
-
-        if tokens:
-            access_token = tokens["access_token"]
-            refresh_token = tokens["refresh_token"]
-
     if not access_token or not refresh_token:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -186,6 +193,96 @@ async def dashboard(request: Request, user: dict[str, Any] = Depends(get_current
             "recent_profiles": recent_profiles,
             "csrf_token": request.state.csrf_token,
         },
+    )
+
+
+@app.get("/profiles", response_class=HTMLResponse)
+async def profiles(
+    request: Request,
+    user: dict[str, Any] = Depends(get_current_user),
+    gender: str | None = None,
+    country_id: str | None = None,
+    age_group: str | None = None,
+    min_age: int | None = None,
+    max_age: int | None = None,
+    sort_by: str | None = None,
+    order: str | None = None,
+    page: int = 1,
+    limit: int = 10,
+):
+    access_token = getattr(request.state, "access_token", request.cookies["access_token"])
+    filters = _profile_filters(
+        gender=gender,
+        country_id=country_id,
+        age_group=age_group,
+        min_age=min_age,
+        max_age=max_age,
+        sort_by=sort_by,
+        order=order,
+        page=page,
+        limit=limit,
+    )
+
+    payload = await backend_client.get_profiles(access_token, filters)
+    profiles = _paginated_items(payload)
+    total = _paginated_total(payload)
+    total_pages = ceil(total / limit) if total else 1
+
+    for profile in profiles:
+        profile["created_at_readable"] = _readable_date(profile.get("created_at"))
+
+    return templates.TemplateResponse(
+        request=request,
+        name="profiles.html",
+        context={
+            "user": user,
+            "profiles": profiles,
+            "filters": filters,
+            "page": page,
+            "limit": limit,
+            "total": total,
+            "total_pages": total_pages,
+            "csrf_token": request.state.csrf_token,
+        },
+    )
+
+
+@app.get("/profiles/export")
+async def export_profiles(
+    request: Request,
+    user: dict[str, Any] = Depends(get_current_user),
+    gender: str | None = None,
+    country_id: str | None = None,
+    age_group: str | None = None,
+    min_age: int | None = None,
+    max_age: int | None = None,
+    sort_by: str | None = None,
+    order: str | None = None,
+    page: int = 1,
+    limit: int = 10,
+):
+    access_token = getattr(request.state, "access_token", request.cookies["access_token"])
+    filters = _profile_filters(
+        gender=gender,
+        country_id=country_id,
+        age_group=age_group,
+        min_age=min_age,
+        max_age=max_age,
+        sort_by=sort_by,
+        order=order,
+        page=page,
+        limit=limit,
+    )
+
+    csv_bytes = await backend_client.export_profiles(access_token, filters)
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    headers = {
+        "Content-Disposition": f'attachment; filename="profiles_{timestamp}.csv"',
+    }
+    return StreamingResponse(
+        BytesIO(csv_bytes),
+        media_type="text/csv",
+        headers=headers,
     )
 
 
