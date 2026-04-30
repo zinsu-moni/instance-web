@@ -17,6 +17,13 @@ SECRET_KEY=your-random-secret-key-for-csrf
 PORT=5000
 ```
 
+For the hosted Vercel backend, set:
+
+```env
+BACKEND_URL=https://hng-task-lemon.vercel.app
+FRONTEND_URL=https://your-frontend-domain.vercel.app
+```
+
 The portal uses `BACKEND_URL` to call:
 
 - `GET /auth/me`
