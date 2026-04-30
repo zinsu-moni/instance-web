@@ -12,6 +12,7 @@ Set the backend base URL in the portal environment:
 
 ```env
 BACKEND_URL=https://your-backend-url.railway.app
+FRONTEND_URL=https://your-web-portal.railway.app
 SECRET_KEY=your-random-secret-key-for-csrf
 PORT=5000
 ```
@@ -30,10 +31,10 @@ The portal uses `BACKEND_URL` to call:
 
 1. The user opens `/login`.
 2. The user clicks the GitHub login button.
-3. The portal redirects to the backend GitHub auth endpoint.
+3. The portal redirects the browser to `BACKEND_URL/auth/github?redirect_uri=FRONTEND_URL/auth/callback`.
 4. The backend completes the GitHub OAuth callback.
 5. The backend redirects back to `/auth/callback` on the portal with `access_token` and `refresh_token` query params.
-6. The portal stores both tokens in HTTP-only cookies.
+6. The portal validates the access token with `GET /auth/me` and stores both tokens in HTTP-only cookies.
 7. The portal redirects the user to `/dashboard`.
 8. Protected pages call `get_current_user`, which validates the current access token through the backend.
 9. If the access token is expired, the portal attempts to refresh tokens and updates the cookies.
@@ -90,6 +91,7 @@ http://localhost:5000/login
 
 ```env
 BACKEND_URL=https://your-backend-url.railway.app
+FRONTEND_URL=https://your-web-portal.railway.app
 SECRET_KEY=replace-with-a-long-random-value
 PORT=5000
 ```

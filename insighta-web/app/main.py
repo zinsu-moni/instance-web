@@ -24,7 +24,6 @@ from app.dependencies import (
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-FRONTEND_CALLBACK_URL = "http://127.0.0.1:5000/auth/callback"
 
 
 app = FastAPI(title="Insighta Labs+ Web Portal")
@@ -166,10 +165,15 @@ async def login(request: Request):
         except Exception:
             pass
 
+    github_url = httpx.URL(f"{settings.backend_url}/auth/github").copy_add_param(
+        "redirect_uri",
+        f"{settings.frontend_url}/auth/callback",
+    )
+
     return templates.TemplateResponse(
         request=request,
         name="login.html",
-        context={},
+        context={"login_url": str(github_url)},
     )
 
 
@@ -179,7 +183,19 @@ async def auth_callback(
     refresh_token: str | None = None,
 ):
     if not access_token or not refresh_token:
-        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+        response = RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+        clear_auth_cookies(response)
+        return response
+
+    try:
+        user = await backend_client.get_me(access_token)
+    except httpx.HTTPError:
+        user = None
+
+    if user is None:
+        response = RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+        clear_auth_cookies(response)
+        return response
 
     response = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
     set_auth_cookies(response, access_token, refresh_token)
@@ -433,15 +449,6 @@ async def account(request: Request, user: dict[str, Any] = Depends(get_current_u
             "csrf_token": request.state.csrf_token,
         },
     )
-
-
-@app.get("/auth/login")
-async def auth_login(request: Request):
-    github_url = httpx.URL(f"{settings.backend_url}/auth/github").copy_add_param(
-        "redirect_uri",
-        FRONTEND_CALLBACK_URL,
-    )
-    return RedirectResponse(url=str(github_url), status_code=status.HTTP_303_SEE_OTHER)
 
 
 @app.get("/")
