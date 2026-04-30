@@ -45,6 +45,35 @@ async def auth_redirect_handler(request: Request, exc: AuthRedirect):
     return redirect_to_login()
 
 
+def _render_error(request: Request, code: int, message: str):
+    return templates.TemplateResponse(
+        request=request,
+        name="error.html",
+        context={"code": code, "message": message},
+        status_code=code,
+    )
+
+
+@app.exception_handler(status.HTTP_403_FORBIDDEN)
+async def forbidden_handler(request: Request, exc: HTTPException):
+    return _render_error(request, status.HTTP_403_FORBIDDEN, "You don't have permission")
+
+
+@app.exception_handler(status.HTTP_404_NOT_FOUND)
+async def not_found_handler(request: Request, exc: HTTPException):
+    return _render_error(request, status.HTTP_404_NOT_FOUND, "Page not found")
+
+
+@app.exception_handler(status.HTTP_429_TOO_MANY_REQUESTS)
+async def rate_limit_handler(request: Request, exc: HTTPException):
+    return _render_error(request, status.HTTP_429_TOO_MANY_REQUESTS, "Too many requests. Please wait.")
+
+
+@app.exception_handler(status.HTTP_500_INTERNAL_SERVER_ERROR)
+async def server_error_handler(request: Request, exc: Exception):
+    return _render_error(request, status.HTTP_500_INTERNAL_SERVER_ERROR, "Server error. Please try again.")
+
+
 def _paginated_items(payload: dict[str, Any]) -> list[dict[str, Any]]:
     for key in ("items", "profiles", "data", "results"):
         value = payload.get(key)
@@ -85,8 +114,8 @@ def _profile_filters(
     gender: str | None = None,
     country_id: str | None = None,
     age_group: str | None = None,
-    min_age: int | None = None,
-    max_age: int | None = None,
+    min_age: str | int | None = None,
+    max_age: str | int | None = None,
     sort_by: str | None = None,
     order: str | None = None,
     page: int | None = None,
@@ -110,6 +139,9 @@ def _profile_filters(
         if isinstance(value, str):
             trimmed = value.strip()
             if not trimmed:
+                continue
+            if key in {"min_age", "max_age"}:
+                cleaned_filters[key] = int(trimmed)
                 continue
             cleaned_filters[key] = trimmed
             continue
@@ -139,15 +171,6 @@ async def login(request: Request):
         name="login.html",
         context={},
     )
-
-
-@app.get("/auth/login")
-async def auth_login(request: Request):
-    github_url = httpx.URL(f"{settings.backend_url}/auth/github").copy_add_param(
-        "redirect_uri",
-        FRONTEND_CALLBACK_URL,
-    )
-    return RedirectResponse(url=str(github_url), status_code=status.HTTP_303_SEE_OTHER)
 
 
 @app.get("/auth/callback")
@@ -221,8 +244,8 @@ async def profiles(
     gender: str | None = None,
     country_id: str | None = None,
     age_group: str | None = None,
-    min_age: int | None = None,
-    max_age: int | None = None,
+    min_age: str | None = None,
+    max_age: str | None = None,
     sort_by: str | None = None,
     order: str | None = None,
     page: int = 1,
@@ -284,8 +307,8 @@ async def export_profiles(
     gender: str | None = None,
     country_id: str | None = None,
     age_group: str | None = None,
-    min_age: int | None = None,
-    max_age: int | None = None,
+    min_age: str | None = None,
+    max_age: str | None = None,
     sort_by: str | None = None,
     order: str | None = None,
     page: int = 1,
@@ -322,6 +345,96 @@ async def export_profiles(
         media_type="text/csv",
         headers=headers,
     )
+
+
+@app.get("/profiles/{profile_id}", response_class=HTMLResponse)
+async def profile_detail(
+    request: Request,
+    profile_id: str,
+    user: dict[str, Any] = Depends(get_current_user),
+):
+    access_token = getattr(request.state, "access_token", request.cookies["access_token"])
+    profile = await backend_client.get_profile(access_token, profile_id)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="profile_detail.html",
+        context={
+            "user": user,
+            "profile": profile,
+            "error": None if profile else "Profile not found",
+            "csrf_token": request.state.csrf_token,
+        },
+    )
+
+
+@app.get("/search", response_class=HTMLResponse)
+async def search(
+    request: Request,
+    user: dict[str, Any] = Depends(get_current_user),
+    q: str | None = None,
+    page: int = 1,
+    limit: int = 10,
+):
+    access_token = getattr(request.state, "access_token", request.cookies["access_token"])
+    query = (q or "").strip()
+    profiles: list[dict[str, Any]] = []
+    total = 0
+    total_pages = 1
+    error: str | None = None
+
+    if query:
+        try:
+            payload = await backend_client.search_profiles(access_token, query, page, limit)
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code != status.HTTP_400_BAD_REQUEST:
+                raise
+            error = "The backend rejected this search. Adjust your query and try again."
+        else:
+            profiles = _paginated_items(payload)
+            total = _paginated_total(payload)
+            total_pages = ceil(total / limit) if total else 1
+
+    for profile in profiles:
+        profile["created_at_readable"] = _readable_date(profile.get("created_at"))
+
+    return templates.TemplateResponse(
+        request=request,
+        name="search.html",
+        context={
+            "user": user,
+            "query": query,
+            "profiles": profiles,
+            "page": page,
+            "limit": limit,
+            "total": total,
+            "total_pages": total_pages,
+            "error": error,
+            "csrf_token": request.state.csrf_token,
+        },
+    )
+
+
+@app.get("/account", response_class=HTMLResponse)
+async def account(request: Request, user: dict[str, Any] = Depends(get_current_user)):
+    user["created_at_readable"] = _readable_date(user.get("created_at"))
+    return templates.TemplateResponse(
+        request=request,
+        name="account.html",
+        context={
+            "user": user,
+            "csrf_token": request.state.csrf_token,
+        },
+    )
+
+
+@app.get("/auth/login")
+async def auth_login(request: Request):
+    github_url = httpx.URL(f"{settings.backend_url}/auth/github").copy_add_param(
+        "redirect_uri",
+        FRONTEND_CALLBACK_URL,
+    )
+    return RedirectResponse(url=str(github_url), status_code=status.HTTP_303_SEE_OTHER)
 
 
 @app.get("/")

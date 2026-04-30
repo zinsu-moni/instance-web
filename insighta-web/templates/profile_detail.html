@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Profile Detail | Insighta Labs+{% endblock %}
+
+{% block content %}
+  <section class="section-stack">
+    <h1>Profile Detail</h1>
+
+    {% if error %}
+      <div class="card">
+        <p>{{ error }}</p>
+        <a href="/profiles" class="button">Back to Profiles</a>
+      </div>
+    {% endif %}
+
+    {% if profile %}
+      <div class="card">
+        <table>
+          <tbody>
+            <tr>
+              <th>ID</th>
+              <td>{{ profile.id }}</td>
+            </tr>
+            <tr>
+              <th>Name</th>
+              <td>{{ profile.name }}</td>
+            </tr>
+            <tr>
+              <th>Gender</th>
+              <td>{{ profile.gender }}</td>
+            </tr>
+            <tr>
+              <th>Gender Probability</th>
+              <td>{{ profile.gender_probability }}</td>
+            </tr>
+            <tr>
+              <th>Age</th>
+              <td>{{ profile.age }}</td>
+            </tr>
+            <tr>
+              <th>Age Group</th>
+              <td>{{ profile.age_group }}</td>
+            </tr>
+            <tr>
+              <th>Country</th>
+              <td>{{ profile.country_name }}</td>
+            </tr>
+            <tr>
+              <th>Country Code</th>
+              <td>{{ profile.country_id }}</td>
+            </tr>
+            <tr>
+              <th>Country Probability</th>
+              <td>{{ profile.country_probability }}</td>
+            </tr>
+            <tr>
+              <th>Created At</th>
+              <td>{{ profile.created_at }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="button-row">
+          <a href="/profiles" class="button">Back to Profiles</a>
+        </div>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

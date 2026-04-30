@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ code }} | Insighta Labs+</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+  </head>
+  <body>
+    <main class="login-page">
+      <section class="login-card">
+        <h1>{{ code }}</h1>
+        <p>{{ message }}</p>
+        <a href="/dashboard" class="button">Go back home</a>
+      </section>
+    </main>
+  </body>
+</html>

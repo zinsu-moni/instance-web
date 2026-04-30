@@ -200,6 +200,14 @@ a {
   transform: translateY(-1px);
 }
 
+.button--danger {
+  background: #dc2626;
+}
+
+.button--danger:hover {
+  background: #b91c1c;
+}
+
 .button--small {
   min-height: 34px;
   padding: 0.45rem 0.75rem;
@@ -243,6 +251,25 @@ tbody tr:nth-child(even) {
 
 tbody tr:hover {
   background: rgba(99, 102, 241, 0.12);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.badge--danger {
+  background: #dc2626;
+}
+
+.badge--info {
+  background: #2563eb;
 }
 
 .spinner {

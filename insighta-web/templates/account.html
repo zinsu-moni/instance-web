@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Account | Insighta Labs+{% endblock %}
+
+{% block content %}
+  <section class="section-stack">
+    <h1>Account</h1>
+
+    <div class="card">
+      <img
+        src="{{ user.avatar_url }}"
+        alt="@{{ user.username }}"
+        width="96"
+        height="96"
+        onerror="this.onerror=null;this.src='/static/img/placeholder.png'"
+      >
+
+      <p><strong>Username:</strong> @{{ user.username }}</p>
+      <p><strong>Email:</strong> {{ user.email }}</p>
+
+      {% if user.role == "admin" %}
+        <p><strong>Role:</strong> <span class="badge badge--danger">Admin</span></p>
+      {% elif user.role == "analyst" %}
+        <p><strong>Role:</strong> <span class="badge badge--info">Analyst</span></p>
+      {% endif %}
+
+      <p><strong>Member since:</strong> {{ user.created_at_readable }}</p>
+    </div>
+
+    <form method="post" action="/auth/logout" class="card">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit" class="button button--danger">Logout</button>
+    </form>
+  </section>
+{% endblock %}
