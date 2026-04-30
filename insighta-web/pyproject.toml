@@ -1,6 +1,7 @@
 [project]
 name = "insighta-web"
 version = "0.1.0"
+requires-python = ">=3.12"
 dependencies = [
   "fastapi",
   "uvicorn",
@@ -13,6 +14,10 @@ dependencies = [
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+exclude = ["api*", "static*", "templates*"]
 
 [tool.uvicorn]
 factory = false
