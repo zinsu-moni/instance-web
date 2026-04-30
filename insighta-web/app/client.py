@@ -35,6 +35,36 @@ class BackendClient:
                 return None
             return data
 
+    async def get_github_auth_url(self) -> str | None:
+        async with httpx.AsyncClient(
+            base_url=self.base_url,
+            timeout=10.0,
+            follow_redirects=False,
+        ) as client:
+            response = await client.get("/auth/github")
+            if response.status_code not in {301, 302, 303, 307, 308}:
+                return None
+            return response.headers.get("location")
+
+    async def exchange_github_callback(
+        self,
+        code: str,
+        state: str,
+        redirect_uri: str | None = None,
+    ) -> dict[str, str] | None:
+        params: dict[str, str] = {"code": code, "state": state}
+        if redirect_uri:
+            params["redirect_uri"] = redirect_uri
+
+        async with httpx.AsyncClient(base_url=self.base_url, timeout=20.0) as client:
+            response = await client.get("/auth/github/callback", params=params)
+            if response.is_error:
+                return None
+            data = response.json()
+            if not data.get("access_token") or not data.get("refresh_token"):
+                return None
+            return data
+
     async def logout(self, refresh_token: str | None) -> None:
         if not refresh_token:
             return

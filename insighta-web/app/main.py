@@ -97,12 +97,42 @@ async def login(request: Request):
 @app.get("/auth/login")
 async def auth_login(request: Request):
     callback_url = str(request.url_for("auth_callback"))
-    github_url = httpx.URL(f"{settings.backend_url}/auth/github").copy_add_param("redirect_uri", callback_url)
-    return RedirectResponse(url=str(github_url), status_code=status.HTTP_303_SEE_OTHER)
+
+    try:
+        auth_url = await backend_client.get_github_auth_url()
+    except httpx.HTTPError:
+        auth_url = None
+
+    if not auth_url:
+        github_url = httpx.URL(f"{settings.backend_url}/auth/github").copy_add_param("redirect_uri", callback_url)
+        return RedirectResponse(url=str(github_url), status_code=status.HTTP_303_SEE_OTHER)
+
+    rewritten_url = httpx.URL(auth_url).copy_set_param("redirect_uri", callback_url)
+    return RedirectResponse(url=str(rewritten_url), status_code=status.HTTP_303_SEE_OTHER)
 
 
 @app.get("/auth/callback")
-async def auth_callback(access_token: str, refresh_token: str):
+async def auth_callback(
+    request: Request,
+    access_token: str | None = None,
+    refresh_token: str | None = None,
+    code: str | None = None,
+    state: str | None = None,
+):
+    if (not access_token or not refresh_token) and code and state:
+        callback_url = str(request.url_for("auth_callback"))
+        try:
+            tokens = await backend_client.exchange_github_callback(code, state, redirect_uri=callback_url)
+        except httpx.HTTPError:
+            tokens = None
+
+        if tokens:
+            access_token = tokens["access_token"]
+            refresh_token = tokens["refresh_token"]
+
+    if not access_token or not refresh_token:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
     response = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
     set_auth_cookies(response, access_token, refresh_token)
     return response
