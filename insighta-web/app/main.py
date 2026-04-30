@@ -187,11 +187,18 @@ async def auth_callback(
 
 
 @app.post("/auth/logout")
-async def logout(request: Request, csrf_token: str = Form(...)):
-    validate_csrf(request, csrf_token)
-    refresh_token = request.cookies.get("refresh_token")
+async def logout(request: Request, csrf_token: str | None = Form(None)):
     try:
-        await backend_client.logout(refresh_token)
+        validate_csrf(request, csrf_token)
+    except HTTPException as exc:
+        if exc.status_code != status.HTTP_403_FORBIDDEN:
+            raise
+
+    access_token = request.cookies.get("access_token")
+    refresh_token = request.cookies.get("refresh_token")
+
+    try:
+        await backend_client.logout(access_token, refresh_token)
     except httpx.HTTPError:
         pass
 

@@ -35,11 +35,19 @@ class BackendClient:
                 return None
             return data
 
-    async def logout(self, refresh_token: str | None) -> None:
-        if not refresh_token:
-            return
+    async def logout(self, access_token: str | None, refresh_token: str | None) -> None:
+        payload: dict[str, str] = {}
+        if refresh_token:
+            payload["refresh_token"] = refresh_token
+
         async with httpx.AsyncClient(base_url=self.base_url, timeout=10.0) as client:
-            await client.post("/auth/logout", headers=self._auth_headers(refresh_token))
+            response = await client.post(
+                "/auth/logout",
+                headers=self._auth_headers(access_token),
+                json=payload,
+            )
+            if response.status_code not in (401, 403):
+                response.raise_for_status()
 
     async def get_profiles(self, access_token: str, filters: dict[str, Any]) -> dict[str, Any]:
         async with httpx.AsyncClient(base_url=self.base_url, timeout=20.0) as client:
