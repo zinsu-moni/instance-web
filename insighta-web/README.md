@@ -24,6 +24,13 @@ BACKEND_URL=https://hng-task-lemon.vercel.app
 FRONTEND_URL=https://instance-web.vercel.app
 ```
 
+For local development, override them in `.env`:
+
+```env
+BACKEND_URL=http://127.0.0.1:8000
+FRONTEND_URL=http://localhost:5000
+```
+
 The portal uses `BACKEND_URL` to call:
 
 - `GET /auth/me`

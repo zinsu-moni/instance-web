@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 app = FastAPI(title="Insighta Labs+ Web Portal")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:8000"],  # Adjust as needed for production
+    allow_origins=["*" ],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

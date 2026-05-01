@@ -9,8 +9,8 @@ load_dotenv()
 
 @dataclass(frozen=True)
 class Settings:
-    backend_url: str = os.getenv("BACKEND_URL", "http://127.0.0.1:8000").rstrip("/")
-    frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:5000").rstrip("/")
+    backend_url: str = os.getenv("BACKEND_URL", "https://hng-task-lemon.vercel.app").rstrip("/")
+    frontend_url: str = os.getenv("FRONTEND_URL", "https://instance-web.vercel.app").rstrip("/")
     secret_key: str = os.getenv("SECRET_KEY", "your-random-secret-key-for-csrf")
     port: int = int(os.getenv("PORT", "5000"))
 
