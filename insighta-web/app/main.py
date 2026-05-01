@@ -155,12 +155,6 @@ def _profile_filter_error(filters: dict[str, Any]) -> str:
     return "The backend rejected one or more profile filters. Adjust the filter values and try again."
 
 
-def _frontend_url(request: Request) -> str:
-    if settings.frontend_url:
-        return settings.frontend_url
-    return str(request.base_url).rstrip("/")
-
-
 @app.get("/login", response_class=HTMLResponse)
 async def login(request: Request):
     access_token = request.cookies.get("access_token")
@@ -173,7 +167,7 @@ async def login(request: Request):
 
     github_url = httpx.URL(f"{settings.backend_url}/auth/github").copy_add_param(
         "redirect_uri",
-        f"{_frontend_url(request)}/auth/callback",
+        settings.frontend_callback_url,
     )
 
     return templates.TemplateResponse(
